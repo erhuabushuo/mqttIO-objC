@@ -16,7 +16,51 @@
 // 
 
 #import "MQTTSession.h"
+#import "MQTTDecoder.h"
+#import "MQTTEncoder.h"
 #import "MQttTxFlow.h"
+
+@interface MQTTSession () <MQTTDecoderDelegate,MQTTEncoderDelegate>  {
+    MQTTSessionStatus    status;
+    NSString*            clientId;
+    //NSString*            userName;
+    //NSString*            password;
+    UInt16               keepAliveInterval;
+    BOOL                 cleanSessionFlag;
+    MQTTMessage*         connectMessage;
+    NSRunLoop*           runLoop;
+    NSString*            runLoopMode;
+    NSTimer*             timer;
+    NSInteger            idleTimer;
+    MQTTEncoder*         encoder;
+    MQTTDecoder*         decoder;
+    UInt16               txMsgId;
+    NSMutableDictionary* txFlows;
+    NSMutableDictionary* rxFlows;
+    unsigned int         ticks;
+}
+
+// private methods & properties
+
+- (void)timerHandler:(NSTimer*)theTimer;
+- (void)encoder:(MQTTEncoder*)sender handleEvent:(MQTTEncoderEvent) eventCode;
+- (void)decoder:(MQTTDecoder*)sender handleEvent:(MQTTDecoderEvent) eventCode;
+- (void)decoder:(MQTTDecoder*)sender newMessage:(MQTTMessage*) msg;
+
+- (void)newMessage:(MQTTMessage*)msg;
+- (void)error:(MQTTSessionEvent)event;
+- (void)handlePublish:(MQTTMessage*)msg;
+- (void)handlePuback:(MQTTMessage*)msg;
+- (void)handlePubrec:(MQTTMessage*)msg;
+- (void)handlePubrel:(MQTTMessage*)msg;
+- (void)handlePubcomp:(MQTTMessage*)msg;
+- (void)send:(MQTTMessage*)msg;
+- (UInt16)nextMsgId;
+
+@property (strong,atomic) NSMutableArray* queue;
+@property (strong,atomic) NSMutableArray* timerRing;
+
+@end
 
 @implementation MQTTSession
 
@@ -184,9 +228,7 @@
     [self error:MQTTSessionEventConnectionClosed];
 }
 
-- (void)setDelegate:(id)aDelegate {
-    delegate = aDelegate;
-}
+#pragma mark Connection Management
 
 - (void)connectToHost:(NSString*)ip port:(UInt32)port {
     [self connectToHost:ip port:port usingSSL:false];
@@ -232,6 +274,21 @@
     [encoder open];
     [decoder open];
 }
+
+
+- (void)connectToHost:(NSString*)ip port:(UInt32)port withConnectionHandler:(void (^)(MQTTSessionEvent event))connHandler messageHandler:(void (^)(NSData* data, NSString* topic))messHandler{
+    [self connectToHost:ip port:port usingSSL:false withConnectionHandler:(void (^)(MQTTSessionEvent event))connHandler messageHandler:(void (^)(NSData* data, NSString* topic))messHandler];
+}
+
+- (void)connectToHost:(NSString*)ip port:(UInt32)port usingSSL:(BOOL)usingSSL withConnectionHandler:(void (^)(MQTTSessionEvent event))connHandler messageHandler:(void (^)(NSData* data, NSString* topic))messHandler{
+    _connectionHandler = [connHandler copy];
+    _messageHandler = [messHandler copy];
+    
+    [self connectToHost:ip port:port usingSSL:usingSSL];
+}
+
+
+#pragma mark Subscription Management
 
 - (void)subscribeTopic:(NSString*)theTopic {
     [self subscribeToTopic:theTopic atLevel:0];
@@ -412,9 +469,12 @@
                                                                  selector:@selector(timerHandler:)
                                                                  userInfo:nil
                                                                   repeats:YES];
-                                if ([delegate respondsToSelector:@selector(session:handleEvent:)]) {
-                                    [delegate session:self handleEvent:MQTTSessionEventConnected];
+                                if(_connectionHandler){
+                                    _connectionHandler(MQTTSessionEventConnected);
                                 }
+                                
+                                [_delegate session:self handleEvent:MQTTSessionEventConnected];
+                                
                                 [runLoop addTimer:timer forMode:runLoopMode];
                             }
                             else {
@@ -459,9 +519,7 @@
 }
 
 - (void)handlePublish:(MQTTMessage*)msg {
-    if (![delegate respondsToSelector:@selector(session:newMessage:onTopic:)]) {
-        return;
-    }
+    
     NSData *data = [msg data];
     if ([data length] < 2) {
         return;
@@ -477,7 +535,10 @@
     NSRange range = NSMakeRange(2 + topicLength, [data length] - topicLength - 2);
     data = [data subdataWithRange:range];
     if ([msg qos] == 0) {
-        [delegate session:self newMessage:data onTopic:topic];
+        [_delegate session:self newMessage:data onTopic:topic];
+        if(_messageHandler){
+            _messageHandler(data, topic);
+        }
     }
     else {
         if ([data length] < 2) {
@@ -490,7 +551,11 @@
         }
         data = [data subdataWithRange:NSMakeRange(2, [data length] - 2)];
         if ([msg qos] == 1) {
-            [delegate session:self newMessage:data onTopic:topic];
+            [_delegate session:self newMessage:data onTopic:topic];
+            
+            if(_messageHandler){
+                _messageHandler(data, topic);
+            }
             [self send:[MQTTMessage pubackMessageWithMessageId:msgId]];
         }
         else {
@@ -561,9 +626,14 @@
     }
     NSDictionary *dict = [rxFlows objectForKey:msgId];
     if (dict != nil) {
-        [delegate session:self
+        [_delegate session:self
                newMessage:[dict valueForKey:@"data"]
                   onTopic:[dict valueForKey:@"topic"]];
+        
+        if(_messageHandler){
+            _messageHandler([dict valueForKey:@"data"], [dict valueForKey:@"topic"]);
+        }
+        
         [rxFlows removeObjectForKey:msgId];
     }
     [self send:[MQTTMessage pubcompMessageWithMessageId:[msgId unsignedIntegerValue]]];
@@ -604,10 +674,12 @@
     
     usleep(1000000); // 1 sec delay
     
-    if ([delegate respondsToSelector:@selector(session:handleEvent:)]) {
-        [delegate session:self handleEvent:eventCode];
+    [_delegate session:self handleEvent:eventCode];
+    
+    if(_connectionHandler){
+        _connectionHandler(eventCode);
     }
-
+    
 }
 
 - (void)send:(MQTTMessage*)msg {

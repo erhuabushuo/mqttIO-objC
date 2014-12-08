@@ -17,21 +17,30 @@
 
 #import "MQTTDecoder.h"
 
+@interface MQTTDecoder() {
+        NSInputStream*  stream;
+        NSRunLoop*      runLoop;
+        NSString*       runLoopMode;
+        UInt8           header;
+        UInt32          length;
+        UInt32          lengthMultiplier;
+        NSMutableData*  dataBuffer;
+    
+}
+
+@end
+
 @implementation MQTTDecoder
 
 - (id)initWithStream:(NSInputStream*)aStream
              runLoop:(NSRunLoop*)aRunLoop
          runLoopMode:(NSString*)aMode {
-    status = MQTTDecoderStatusInitializing;
+    _status = MQTTDecoderStatusInitializing;
     stream = aStream;
     [stream setDelegate:self];
     runLoop = aRunLoop;
     runLoopMode = aMode;
     return self;
-}
-
-- (void)setDelegate:(id)aDelegate {
-    delegate = aDelegate;
 }
 
 - (void)open {
@@ -52,27 +61,27 @@
         return;
     switch (eventCode) {
         case NSStreamEventOpenCompleted:
-            status = MQTTDecoderStatusDecodingHeader;
+            _status = MQTTDecoderStatusDecodingHeader;
             break;
         case NSStreamEventHasBytesAvailable:
-            if (status == MQTTDecoderStatusDecodingHeader) {
+            if (_status == MQTTDecoderStatusDecodingHeader) {
                 NSInteger n = [stream read:&header maxLength:1];
                 if (n == -1) {
-                    status = MQTTDecoderStatusConnectionError;
-                    [delegate decoder:self handleEvent:MQTTDecoderEventConnectionError];
+                    _status = MQTTDecoderStatusConnectionError;
+                    [_delegate decoder:self handleEvent:MQTTDecoderEventConnectionError];
                 }
                 else if (n == 1) {
                     length = 0;
                     lengthMultiplier = 1;
-                    status = MQTTDecoderStatusDecodingLength;
+                    _status = MQTTDecoderStatusDecodingLength;
                 }
             }
-            while (status == MQTTDecoderStatusDecodingLength) {
+            while (_status == MQTTDecoderStatusDecodingLength) {
                 UInt8 digit;
                 NSInteger n = [stream read:&digit maxLength:1];
                 if (n == -1) {
-                    status = MQTTDecoderStatusConnectionError;
-                    [delegate decoder:self handleEvent:MQTTDecoderEventConnectionError];
+                    _status = MQTTDecoderStatusConnectionError;
+                    [_delegate decoder:self handleEvent:MQTTDecoderEventConnectionError];
                     break;
                 }
                 else if (n == 0) {
@@ -81,13 +90,13 @@
                 length += (digit & 0x7f) * lengthMultiplier;
                 if ((digit & 0x80) == 0x00) {
                     dataBuffer = [NSMutableData dataWithCapacity:length];
-                    status = MQTTDecoderStatusDecodingData;
+                    _status = MQTTDecoderStatusDecodingData;
                 }
                 else {
                     lengthMultiplier *= 128;
                 }
             }
-            if (status == MQTTDecoderStatusDecodingData) {
+            if (_status == MQTTDecoderStatusDecodingData) {
                 if (length > 0) {
                     NSInteger n, toRead;
                     UInt8 buffer[768];
@@ -97,8 +106,8 @@
                     }
                     n = [stream read:buffer maxLength:toRead];
                     if (n == -1) {
-                        status = MQTTDecoderStatusConnectionError;
-                        [delegate decoder:self handleEvent:MQTTDecoderEventConnectionError];
+                        _status = MQTTDecoderStatusConnectionError;
+                        [_delegate decoder:self handleEvent:MQTTDecoderEventConnectionError];
                     }
                     else {
                         [dataBuffer appendBytes:buffer length:n];
@@ -124,19 +133,19 @@
                                                  retainFlag:retainFlag
                                                     dupFlag:isDuplicate
                                                        data:dataBuffer];
-                    [delegate decoder:self newMessage:msg];
+                    [_delegate decoder:self newMessage:msg];
                     dataBuffer = NULL;
-                    status = MQTTDecoderStatusDecodingHeader;
+                    _status = MQTTDecoderStatusDecodingHeader;
                 }
             }
             break;
         case NSStreamEventEndEncountered:
-            status = MQTTDecoderStatusConnectionClosed;
-            [delegate decoder:self handleEvent:MQTTDecoderEventConnectionClosed];
+            _status = MQTTDecoderStatusConnectionClosed;
+            [_delegate decoder:self handleEvent:MQTTDecoderEventConnectionClosed];
             break;
         case NSStreamEventErrorOccurred:
-            status = MQTTDecoderStatusConnectionError;
-            [delegate decoder:self handleEvent:MQTTDecoderEventConnectionError];
+            _status = MQTTDecoderStatusConnectionError;
+            [_delegate decoder:self handleEvent:MQTTDecoderEventConnectionError];
             break;
         default:
             NSLog(@"unhandled event code");

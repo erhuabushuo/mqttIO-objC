@@ -16,8 +16,7 @@
 // 
 
 #import <Foundation/Foundation.h>
-#import "MQTTDecoder.h"
-#import "MQTTEncoder.h"
+#import "MQTTMessage.h"
 
 typedef enum {
     MQTTSessionStatusCreated,
@@ -34,26 +33,18 @@ typedef enum {
     MQTTSessionEventProtocolError
 } MQTTSessionEvent;
 
-@interface MQTTSession : NSObject {
-    MQTTSessionStatus    status;
-    NSString*            clientId;
-    //NSString*            userName;
-    //NSString*            password;
-    UInt16               keepAliveInterval;
-    BOOL                 cleanSessionFlag;
-    MQTTMessage*         connectMessage;
-    NSRunLoop*           runLoop;
-    NSString*            runLoopMode;
-    NSTimer*             timer;
-    NSInteger            idleTimer;
-    MQTTEncoder*         encoder;
-    MQTTDecoder*         decoder;
-    UInt16               txMsgId;
-    id                   delegate;
-    NSMutableDictionary* txFlows;
-    NSMutableDictionary* rxFlows;
-    unsigned int         ticks;
-}
+@class MQTTSession;
+
+@protocol MQTTSessionDelegate
+
+- (void)session:(MQTTSession*)session handleEvent:(MQTTSessionEvent)eventCode;
+- (void)session:(MQTTSession*)session newMessage:(NSData*)data onTopic:(NSString*)topic;
+
+@end
+
+@interface MQTTSession : NSObject 
+
+#pragma mark Constructors
 
 - (id)initWithClientId:(NSString*)theClientId;
 - (id)initWithClientId:(NSString*)theClientId runLoop:(NSRunLoop*)theRunLoop
@@ -104,14 +95,24 @@ typedef enum {
                runLoop:(NSRunLoop*)theRunLoop
                forMode:(NSString*)theRunLoopMode;
 
-- (void)dealloc;
-- (void)close;
-- (void)setDelegate:aDelegate;
+#pragma mark Delegates and Callback blocks
+@property (weak) id<MQTTSessionDelegate> delegate;
+@property (strong) void (^connectionHandler)(MQTTSessionEvent event);
+@property (strong) void (^messageHandler)(NSData* message, NSString* topic);
+
+#pragma mark Connection Management
 - (void)connectToHost:(NSString*)ip port:(UInt32)port;
 - (void)connectToHost:(NSString*)ip port:(UInt32)port usingSSL:(BOOL)usingSSL;
+- (void)connectToHost:(NSString*)ip port:(UInt32)port withConnectionHandler:(void (^)(MQTTSessionEvent event))connHandler messageHandler:(void (^)(NSData* data, NSString* topic))messHandler;
+- (void)connectToHost:(NSString*)ip port:(UInt32)port usingSSL:(BOOL)usingSSL withConnectionHandler:(void (^)(MQTTSessionEvent event))connHandler messageHandler:(void (^)(NSData* data, NSString* topic))messHandler;
+- (void)close;
+
+#pragma mark Subscription Management
 - (void)subscribeTopic:(NSString*)theTopic;
 - (void)subscribeToTopic:(NSString*)topic atLevel:(UInt8)qosLevel;
 - (void)unsubscribeTopic:(NSString*)theTopic;
+
+#pragma mark Message Publishing
 - (void)publishData:(NSData*)theData onTopic:(NSString*)theTopic;
 - (void)publishDataAtLeastOnce:(NSData*)theData onTopic:(NSString*)theTopic;
 - (void)publishDataAtLeastOnce:(NSData*)theData onTopic:(NSString*)theTopic retain:(BOOL)retainFlag;
@@ -120,29 +121,7 @@ typedef enum {
 - (void)publishDataExactlyOnce:(NSData*)theData onTopic:(NSString*)theTopic;
 - (void)publishDataExactlyOnce:(NSData*)theData onTopic:(NSString*)theTopic retain:(BOOL)retainFlag;
 - (void)publishJson:(id)payload onTopic:(NSString*)theTopic;
-- (void)timerHandler:(NSTimer*)theTimer;
-- (void)encoder:(MQTTEncoder*)sender handleEvent:(MQTTEncoderEvent) eventCode;
-- (void)decoder:(MQTTDecoder*)sender handleEvent:(MQTTDecoderEvent) eventCode;
-- (void)decoder:(MQTTDecoder*)sender newMessage:(MQTTMessage*) msg;
-
-// private methods
-- (void)newMessage:(MQTTMessage*)msg;
-- (void)error:(MQTTSessionEvent)event;
-- (void)handlePublish:(MQTTMessage*)msg;
-- (void)handlePuback:(MQTTMessage*)msg;
-- (void)handlePubrec:(MQTTMessage*)msg;
-- (void)handlePubrel:(MQTTMessage*)msg;
-- (void)handlePubcomp:(MQTTMessage*)msg;
-- (void)send:(MQTTMessage*)msg;
-- (UInt16)nextMsgId;
-
-@property (strong,atomic) NSMutableArray* queue;
-@property (strong,atomic) NSMutableArray* timerRing;
 
 @end
 
-@interface NSObject (MQTTSessionDelegate)
-- (void)session:(MQTTSession*)session handleEvent:(MQTTSessionEvent)eventCode;
-- (void)session:(MQTTSession*)session newMessage:(NSData*)data onTopic:(NSString*)topic;
 
-@end
