@@ -3,7 +3,7 @@ mqttIO-iOS-SDK
 
 iOS SDK for MQTT
 
-Copyright © 2011, 2013 2lemetry, LLC
+Copyright © 2011, 2013, 2014 2lemetry, LLC
 
 All rights reserved. 
 

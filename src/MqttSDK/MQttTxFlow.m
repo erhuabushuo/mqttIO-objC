@@ -25,26 +25,9 @@
 
 - (id)initWithMsg:(MQTTMessage*)aMsg
          deadline:(unsigned int)aDeadline {
-   msg = aMsg;
-   deadline = aDeadline;
+   _msg = aMsg;
+   _deadline = aDeadline;
    return self;
 }
-
-- (void)setMsg:(MQTTMessage*)aMsg {
-    msg = aMsg;
-}
-
-- (void)setDeadline:(unsigned int)newDeadline {
-    deadline = newDeadline;
-}
-
-- (MQTTMessage*)msg {
-    return msg;
-}
-
-- (unsigned int) deadline {
-    return deadline;
-}
-
 
 @end

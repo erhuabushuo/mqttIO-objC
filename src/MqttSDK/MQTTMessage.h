@@ -17,14 +17,7 @@
 
 #import <Foundation/Foundation.h>
 
-@interface MQTTMessage : NSObject {
-    UInt8    type;
-    UInt8    qos;
-    BOOL     retainFlag;
-    BOOL     dupFlag;
-}
-
-enum {
+typedef enum {
     MQTTConnect = 1,
     MQTTConnack = 2,
     MQTTPublish = 3,
@@ -39,9 +32,12 @@ enum {
     MQTTPingreq = 12,
     MQTTPingresp = 13,
     MQTTDisconnect = 14
-};
+} MQTTMessageType;
 
-// instance methods
+@interface MQTTMessage : NSObject
+
+#pragma mark Instance Methods
+
 + (id)connectMessageWithClientId:(NSString*)clientId
                         userName:(NSString*)userName
                         password:(NSString*)password
@@ -77,6 +73,8 @@ enum {
 + (id)pubrelMessageWithMessageId:(UInt16)msgId;
 + (id)pubcompMessageWithMessageId:(UInt16)msgId;
 
+#pragma mark Constructors
+
 - (id)initWithType:(UInt8)aType;
 - (id)initWithType:(UInt8)aType data:(NSData*)aData;
 - (id)initWithType:(UInt8)aType
@@ -87,14 +85,22 @@ enum {
         retainFlag:(BOOL)aRetainFlag
            dupFlag:(BOOL)aDupFlag
               data:(NSData*)aData;
+
+#pragma mark Control methods
+
 - (void)setDupFlag;
-- (UInt8)type;
-- (UInt8)qos;
-- (BOOL)retainFlag;
-- (BOOL)isDuplicate;
-@property (strong,nonatomic) NSData * data;
+
+#pragma mark Message Properties
+
+@property (assign) UInt8 type;
+@property (assign) UInt8 qos;
+@property (assign) BOOL retainFlag;
+@property (assign) BOOL isDuplicate;
+@property (strong) NSData * data;
 
 @end
+
+#pragma mark NSMutableData category extension
 
 @interface NSMutableData (MQTT)
 - (void)appendByte:(UInt8)byte;
