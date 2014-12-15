@@ -164,7 +164,7 @@
     NSLog(@"Client ID: %@",clientId);
     
     self.mqttSession1Rx = [[MQTTSession alloc] initWithClientId:clientId runLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
-    [self.mqttSession1Rx connectToHost:@"q.m2m.io" port:1883];
+    [self.mqttSession1Rx connectToHost:@"test.mosquitto.org" port:8883 usingSSL:YES];
     [self.mqttSession1Rx setDelegate:self];
     
     
