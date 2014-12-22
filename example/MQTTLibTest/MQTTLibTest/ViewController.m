@@ -42,6 +42,7 @@
 	// Do any additional setup after loading the view, typically from a nib.
     self.executionLog = [[NSMutableArray alloc] init];
     self.executionTimes = [[NSMutableArray alloc] init];
+    //[self addRootCert];
 }
 
 - (void)didReceiveMemoryWarning
@@ -63,6 +64,24 @@
     cell.detailTextLabel.text = [self.executionLog objectAtIndex:row];
     
     return cell;
+}
+
+-(void)addRootCert{
+    NSString* rootCertPath = [[NSBundle mainBundle] pathForResource:@"mosquitto.org-2" ofType:@"der"];
+    NSData* rootCertData = [NSData dataWithContentsOfFile:rootCertPath];
+    
+    OSStatus err = noErr;
+    SecCertificateRef rootCert = SecCertificateCreateWithData(kCFAllocatorDefault, (__bridge CFDataRef)rootCertData);
+    NSDictionary* dict = [NSDictionary dictionaryWithObjectsAndKeys:(__bridge_transfer id)kSecClassCertificate, kSecClass, rootCert, kSecValueRef, nil];
+    
+    err = SecItemAdd((__bridge CFDictionaryRef) dict, NULL);
+    if (err == noErr) {
+        NSLog(@"Sucessfully added root certificate");
+    }else if (err == errSecDuplicateItem){
+        NSLog(@"Root certificate already exists");
+    }else{
+        NSLog(@"Root certificate add failed");
+    }
 }
 
 
@@ -164,7 +183,7 @@
     NSLog(@"Client ID: %@",clientId);
     
     self.mqttSession1Rx = [[MQTTSession alloc] initWithClientId:clientId runLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
-    [self.mqttSession1Rx connectToHost:@"test.mosquitto.org" port:8883 usingSSL:YES];
+    [self.mqttSession1Rx connectToHost:@"q.m2m.io" port:1883 usingSSL:NO];
     [self.mqttSession1Rx setDelegate:self];
     
     
@@ -212,11 +231,11 @@
         usleep(1000000);
         if(self.mqttSession1Connected == YES) {
             [self makeLog: @"Test 01 Passed"];
-            return;
+            //return;
         }
         if(self.mqttSession1ConnectionFailed == YES) {
             [self makeLog: @"Test 01 Failed"];
-            return;
+            //return;
         }
         counter ++;
     }while(counter <30);

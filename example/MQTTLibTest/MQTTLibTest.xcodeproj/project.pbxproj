@@ -29,6 +29,9 @@
 		85A82CDC170C18DB008AD870 /* MQTTMessage.m in Sources */ = {isa = PBXBuildFile; fileRef = 85A82CD5170C18DB008AD870 /* MQTTMessage.m */; };
 		85A82CDD170C18DB008AD870 /* MQTTSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 85A82CD7170C18DB008AD870 /* MQTTSession.m */; };
 		85A82CDE170C18DB008AD870 /* MQttTxFlow.m in Sources */ = {isa = PBXBuildFile; fileRef = 85A82CD9170C18DB008AD870 /* MQttTxFlow.m */; };
+		DB03E22A1A481F8800B177CB /* mosquitto.org-2.crt in Resources */ = {isa = PBXBuildFile; fileRef = DB03E2291A481F8800B177CB /* mosquitto.org-2.crt */; };
+		DB03E22E1A48238800B177CB /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB03E22D1A48238800B177CB /* Security.framework */; };
+		DB03E2301A48242E00B177CB /* mosquitto.org-2.der in Resources */ = {isa = PBXBuildFile; fileRef = DB03E22F1A48242700B177CB /* mosquitto.org-2.der */; };
 		DB7E7A7E1A3EF21D00168EA9 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB7E7A7D1A3EF21D00168EA9 /* CFNetwork.framework */; };
 /* End PBXBuildFile section */
 
@@ -76,6 +79,10 @@
 		85A82CD7170C18DB008AD870 /* MQTTSession.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MQTTSession.m; path = ../../src/MqttSDK/MQTTSession.m; sourceTree = "<group>"; };
 		85A82CD8170C18DB008AD870 /* MQttTxFlow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MQttTxFlow.h; path = ../../src/MqttSDK/MQttTxFlow.h; sourceTree = "<group>"; };
 		85A82CD9170C18DB008AD870 /* MQttTxFlow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MQttTxFlow.m; path = ../../src/MqttSDK/MQttTxFlow.m; sourceTree = "<group>"; };
+		DB03E2291A481F8800B177CB /* mosquitto.org-2.crt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "mosquitto.org-2.crt"; sourceTree = "<group>"; };
+		DB03E22B1A48236000B177CB /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		DB03E22D1A48238800B177CB /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		DB03E22F1A48242700B177CB /* mosquitto.org-2.der */ = {isa = PBXFileReference; lastKnownFileType = file; path = "mosquitto.org-2.der"; sourceTree = "<group>"; };
 		DB7E7A7D1A3EF21D00168EA9 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -84,6 +91,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DB03E22E1A48238800B177CB /* Security.framework in Frameworks */,
 				DB7E7A7E1A3EF21D00168EA9 /* CFNetwork.framework in Frameworks */,
 				85A82C93170C18B6008AD870 /* UIKit.framework in Frameworks */,
 				85A82C95170C18B6008AD870 /* Foundation.framework in Frameworks */,
@@ -127,6 +135,8 @@
 		85A82C91170C18B6008AD870 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				DB03E22D1A48238800B177CB /* Security.framework */,
+				DB03E22B1A48236000B177CB /* CoreFoundation.framework */,
 				DB7E7A7D1A3EF21D00168EA9 /* CFNetwork.framework */,
 				85A82C92170C18B6008AD870 /* UIKit.framework */,
 				85A82C94170C18B6008AD870 /* Foundation.framework */,
@@ -143,6 +153,8 @@
 				85A82CA2170C18B6008AD870 /* AppDelegate.m */,
 				85A82CAA170C18B6008AD870 /* MainStoryboard_iPhone.storyboard */,
 				85A82CAD170C18B6008AD870 /* MainStoryboard_iPad.storyboard */,
+				DB03E2291A481F8800B177CB /* mosquitto.org-2.crt */,
+				DB03E22F1A48242700B177CB /* mosquitto.org-2.der */,
 				85A82CB0170C18B6008AD870 /* ViewController.h */,
 				85A82CB1170C18B6008AD870 /* ViewController.m */,
 				85A82C99170C18B6008AD870 /* Supporting Files */,
@@ -277,6 +289,8 @@
 				85A82CA9170C18B6008AD870 /* Default-568h@2x.png in Resources */,
 				85A82CAC170C18B6008AD870 /* MainStoryboard_iPhone.storyboard in Resources */,
 				85A82CAF170C18B6008AD870 /* MainStoryboard_iPad.storyboard in Resources */,
+				DB03E2301A48242E00B177CB /* mosquitto.org-2.der in Resources */,
+				DB03E22A1A481F8800B177CB /* mosquitto.org-2.crt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -442,6 +456,7 @@
 				INFOPLIST_FILE = "MQTTLibTest/MQTTLibTest-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				VALID_ARCHS = "arm64 armv7s armv7";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -454,6 +469,7 @@
 				INFOPLIST_FILE = "MQTTLibTest/MQTTLibTest-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				VALID_ARCHS = "arm64 armv7s armv7";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
